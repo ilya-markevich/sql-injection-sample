@@ -39,9 +39,6 @@ jobs:
             matrix:
                 node-version: [12.x]
         if: github.ref == 'refs/heads/master'
-        env:
-            DOCKER_HUB_LOGIN: ${{secrets.DOCKER_HUB_LOGIN}}
-            DOCKER_HUB_PASSWORD: ${{secrets.DOCKER_HUB_PASSWORD}}
         steps:
             -   name: Checkout repo
                 uses: actions/checkout@v1
@@ -55,6 +52,9 @@ jobs:
                 run: DOCKER_BUILDKIT=1 docker build -t mark91articles/sql-injection:latest --target main .
 
             -   name: Push image
+                shell: sh
+                env:
+                    DOCKER_HUB_TOKEN: ${{secrets.DOCKER_HUB_TOKEN}}
                 run: |
-                    docker login --username $DOCKER_HUB_LOGIN --password-stdin $DOCKER_HUB_PASSWORD
+                    docker login --username ${{secrets.DOCKERHUB_USERNAME}} --password "$DOCKER_HUB_TOKEN"
                     docker push mark91articles/sql-injection:latest
