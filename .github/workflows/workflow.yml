@@ -1,0 +1,60 @@
+name: Sql injection sample building
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+jobs:
+    test:
+        name: Testing and linting
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [12.x]
+        env:
+            POSTGRES_USER: test_user
+            POSTGRES_PASSWORD: test_password
+            POSTGRES_DB: test_db
+        steps:
+            -   name: Checkout repo
+                uses: actions/checkout@v1
+
+            -   name: Install Node ${{ matrix.node-version }}
+                uses: actions/setup-node@v1
+                with:
+                    node-version: ${{ matrix.node-version }}
+
+            -   name: Setup test environment
+                run: docker-compose -f docker-compose-test.yml up -d
+
+            -   name: Run linting and testint
+                run: docker build -t test_image --network="network-for-test" --build-arg POSTGRES_USER=$POSTGRES_USER --build-arg POSTGRES_PASSWORD=$POSTGRES_PASSWORD --build-arg POSTGRES_DB=$POSTGRES_DB --target test .
+    publish:
+        name: Publishing artifacts
+        needs: test
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [12.x]
+        if: github.ref == 'refs/heads/master'
+        env:
+            DOCKER_HUB_LOGIN: ${{secrets.DOCKER_HUB_LOGIN}}
+            DOCKER_HUB_PASSWORD: ${{secrets.DOCKER_HUB_PASSWORD}}
+        steps:
+            -   name: Checkout repo
+                uses: actions/checkout@v1
+
+            -   name: Install Node ${{ matrix.node-version }}
+                uses: actions/setup-node@v1
+                with:
+                    node-version: ${{ matrix.node-version }}
+
+            -   name: Build image
+                run: DOCKER_BUILDKIT=1 docker build -t mark91articles/sql-injection:latest --target main .
+
+            -   name: Push image
+                run: |
+                    docker login --username $DOCKER_HUB_LOGIN --password-stdin $DOCKER_HUB_PASSWORD
+                    docker push mark91articles/sql-injection:latest
