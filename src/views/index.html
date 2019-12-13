@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sql Injection Samples</title>
+    <style>
+        .sample-container {
+            border: 1px solid #000;
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+
+        .search-results {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+ <script>
+        const APP = {
+            samplesConfig: [
+                {title: 'Unsafe search', containerClass: 'unsafe-search', requestUrl: 'unsafeSearch'},
+                {title: 'Search without errors', containerClass: 'search-without-error', requestUrl: 'searchWithoutError'},
+                {title: 'Safe search', containerClass: 'safe-search', requestUrl: 'safeSearch'}
+            ]
+        };
+
+        APP.disableButton = ($button) => $button.setAttribute('disabled', 'disabled');
+        APP.enableButton = ($button) => $button.removeAttribute('disabled');
+
+        APP.generateMarkup = () => {
+            document.querySelector('body').innerHTML = APP.samplesConfig
+                .map(({title, containerClass}) => `
+                    <div class="sample-container ${containerClass}">
+                        <h3>${title}</h3>
+                        <div class="form-container">
+                            <input type="text" placeholder="Search string" name="search" />
+                            <button class="search-button" disabled="disabled">Search</button>
+                            <button class="clear-results-button" disabled="disabled">Clear results</button>
+                        </div>
+                        <div class="search-results"></div>
+                    </div>
+                `)
+                .join('');
+        };
+
+        APP.setupListeners = () => {
+            APP.samplesConfig.forEach(({containerClass, requestUrl}) => {
+                const $container = document.querySelector(`.${containerClass}`);
+                const $input = $container.querySelector('input');
+                const $searchResults = $container.querySelector('.search-results');
+                const $searchButton = $container.querySelector('.search-button');
+                const $clearButton = $container.querySelector('.clear-results-button');
+
+                $input.addEventListener('keyup', (e) => {
+                    if (e.target.value.length > 0) {
+                        APP.enableButton($searchButton);
+                    } else {
+                        APP.disableButton($searchButton);
+                    }
+                });
+
+                $searchButton.addEventListener('click', async () => {
+                    try {
+                        const response = await fetch(`/${requestUrl}?search=${encodeURIComponent($input.value)}`);
+                        const searchResult = await response.json();
+
+                        $searchResults.innerHTML = searchResult.length === 0 ?
+                            '<div>Nothing is found</div>' :
+                            searchResult.map(({name, count}) => `<div>${name} - ${count}</div>`).join('');
+                    } catch (err) {
+                        $searchResults.innerHTML = err.message;
+                    }
+
+                    APP.enableButton($clearButton);
+                });
+
+                $clearButton.addEventListener('click', () => {
+                    $searchResults.innerHTML = '';
+                    APP.disableButton($clearButton);
+                });
+            });
+        };
+    </script>
+    <script>
+        APP.generateMarkup();
+        APP.setupListeners();
+    </script>
+</body>
+</html>

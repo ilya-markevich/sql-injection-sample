@@ -1,0 +1,11 @@
+.env
+node_modules
+postgres-data
+.gitignore
+docker-compose.yml
+docker-compose-test.yml
+docker-compose-development.yml
+README.md
+Dockerfile
+coverage
+LICENSE
