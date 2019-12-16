@@ -13,6 +13,10 @@
         .search-results {
             margin-top: 10px;
         }
+
+        input {
+            width: 500px;
+        }
     </style>
 </head>
 <body>
@@ -65,9 +69,13 @@
                         const response = await fetch(`/${requestUrl}?search=${encodeURIComponent($input.value)}`);
                         const searchResult = await response.json();
 
-                        $searchResults.innerHTML = searchResult.length === 0 ?
-                            '<div>Nothing is found</div>' :
-                            searchResult.map(({name, count}) => `<div>${name} - ${count}</div>`).join('');
+                        if (response.status === 200) {
+                            $searchResults.innerHTML = searchResult.length === 0 ?
+                                '<div>Nothing is found</div>' :
+                                searchResult.map(({name, count}) => `<div>${name} - ${count}</div>`).join('');
+                        } else {
+                            $searchResults.innerHTML = searchResult.message;
+                        }
                     } catch (err) {
                         $searchResults.innerHTML = err.message;
                     }
