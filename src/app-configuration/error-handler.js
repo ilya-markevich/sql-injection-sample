@@ -7,7 +7,10 @@ module.exports = (app) => {
         } catch (err) {
             logger.error(err);
 
-            ctx.body = err;
+            ctx.body = {
+                ...err,
+                message: err.message,
+            };
             ctx.status = 400;
         }
     });
